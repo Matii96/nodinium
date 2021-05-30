@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from 'src/app.module';
+import { AppModule } from './../src/app.module';
 
-describe('App (e2e)', () => {
+describe('AppController (e2e)', () => {
   let app: INestApplication;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -15,11 +15,10 @@ describe('App (e2e)', () => {
     await app.init();
   });
 
-  afterAll(async () => {
-    await app.close();
-  });
-
-  it('/graphql', () => {
-    return request(app.getHttpServer()).get('/graphql').expect(400);
+  it('/ (GET)', () => {
+    return request(app.getHttpServer())
+      .get('/')
+      .expect(200)
+      .expect('Hello World!');
   });
 });

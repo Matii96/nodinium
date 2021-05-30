@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './http-exception.filter';
 import { LoggerFactory } from './app.logger-factory';
 
@@ -13,6 +14,15 @@ async function bootstrap() {
   app.useLogger(LoggerFactory(config));
   app.useGlobalFilters(new HttpExceptionFilter());
 
+  const document = SwaggerModule.createDocument(
+    app,
+    new DocumentBuilder()
+      .setTitle('Nodinium')
+      .setDescription('Cryptocurrency of (not so) new generation')
+      .setVersion('1.0')
+      .build(),
+  );
+  SwaggerModule.setup('api/docs', app, document);
 
   // Start application
   const port = config.get<number>('PORT');
