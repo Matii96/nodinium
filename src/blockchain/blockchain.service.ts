@@ -8,6 +8,7 @@ import { Block } from './block';
 @Injectable()
 export class BlockchainService {
   private cachedTransactions: TransactionDto[];
+  private bussy: boolean;
 
   public constructor(
     private readonly config: ConfigService,
@@ -15,18 +16,28 @@ export class BlockchainService {
     private readonly blockchainRepository: BlockchainRepository,
   ) {
     this.cachedTransactions = [];
+    this.bussy = false;
   }
 
-  public appendTransaction(transaction: TransactionDto): void {
+  public async appendTransaction(transaction: TransactionDto) {
     this.cachedTransactions.push(transaction);
+    if (this.bussy) return;
 
-    if (this.cachedTransactions.length < this.config.get<number>('TRANSACTIONS_PER_BLOCK')) return;
+    const transactionsPerBlock = this.config.get<number>('TRANSACTIONS_PER_BLOCK');
+    while (this.cachedTransactions.length >= transactionsPerBlock) {
+      this.bussy = true;
+      const lastBlock = this.blockchainRepository.findLast();
+      const newBlock = new Block(
+        this.hashingService.getHash(lastBlock),
+        this.cachedTransactions.slice(-transactionsPerBlock),
+      );
+      this.cachedTransactions = this.cachedTransactions.slice(0, -transactionsPerBlock);
+      newBlock.nonce = await this.hashingService.mineBlock(newBlock);
+      this.blockchainRepository.create(newBlock);
 
-    const lastBlock = this.blockchainRepository.findLast();
-    const newBlock = new Block(this.hashingService.getHash(lastBlock), this.cachedTransactions);
-    this.cachedTransactions = [];
-    newBlock.nonce = this.hashingService.mineBlock(newBlock);
-    this.blockchainRepository.create(newBlock);
+      console.log('newBlock:', newBlock);
+    }
+    this.bussy = false;
   }
 
   public validate(): boolean {

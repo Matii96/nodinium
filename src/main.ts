@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './http-exception.filter';
@@ -13,6 +13,9 @@ async function bootstrap() {
 
   app.useLogger(LoggerFactory(config));
   app.useGlobalFilters(new HttpExceptionFilter());
+
+  // For class-validator
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   const document = SwaggerModule.createDocument(
     app,

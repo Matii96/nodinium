@@ -6,7 +6,8 @@ export class BlockchainRepository {
   private blocks: Block[];
 
   public constructor() {
-    this.blocks = [];
+    const origin = new Block('0', []);
+    this.blocks = [origin];
   }
 
   public findById(id: number) {

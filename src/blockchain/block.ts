@@ -7,8 +7,4 @@ export class Block {
     public timestamp: number = Date.now(),
     public nonce: number = 0,
   ) {}
-
-  public toString(): string {
-    return `${this.previousBlockHash}-${JSON.stringify(this.transactions)}-${this.nonce}-${this.timestamp}`;
-  }
 }

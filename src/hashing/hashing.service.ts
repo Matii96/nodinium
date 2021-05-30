@@ -6,32 +6,52 @@ import { Worker } from 'worker_threads';
 import { EventEmitter } from 'events';
 import { createHash } from 'crypto';
 import { Block } from 'src/blockchain/block';
+import { WorkerCommand } from './worker-command';
 
 @Injectable()
 export class HashingService {
   private workers: Worker[];
+  private workReceivers: { [id: string]: (result: any) => any };
 
   public constructor(private readonly config: ConfigService) {
     this.initWorkers();
-    EventEmitter.defaultMaxListeners = 30;
+    this.workReceivers = {};
   }
 
   private initWorkers(): void {
     this.workers = [];
-    const workersCount = this.config.get<number>('WORKER_THREADS') || cpus().length;
-    for (let i = 0; i < workersCount; i++) {
-      this.workers.push(new Worker(join(__dirname, 'worker.js')));
+    let workersCount = parseInt(this.config.get<string>('WORKER_THREADS'));
+    if (!(workersCount > 0)) {
+      workersCount = cpus().length;
     }
+    EventEmitter.defaultMaxListeners = workersCount * 2;
+    for (let i = 0; i < workersCount; i++) {
+      const worker = new Worker(join(__dirname, 'worker.js'));
+      worker.on('message', this.handleMessage.bind(this));
+      this.workers.push(worker);
+    }
+  }
+
+  private handleMessage(message: WorkerCommand<any>) {
+    if (!this.workReceivers[message.id]) return;
+
+    this.workReceivers[message.id](message.data);
+    delete this.workReceivers[message.id];
+    const abordWork = new WorkerCommand<string>('abord', message.id);
+    this.workers.forEach((worker) => worker.postMessage(abordWork));
   }
 
   /**
    *
    * @param {Block} block
-   * @returns {number} Found nonce
+   * @returns {Promise<number>} Found nonce
    */
-  public mineBlock(block: Block): number {
-    // TODO
-    return 5;
+  public mineBlock(block: Block) {
+    return new Promise<number>((resolve) => {
+      const command = new WorkerCommand<Block>('find-nonce', block);
+      this.workReceivers[command.id] = resolve;
+      this.workers.forEach((worker) => worker.postMessage(command));
+    });
   }
 
   /**

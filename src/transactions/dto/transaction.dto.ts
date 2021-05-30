@@ -1,13 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsUUID, IsPositive } from 'class-validator';
+import { v4 as uuidv4 } from 'uuid';
 
 export class TransactionDto {
-  @ApiProperty()
+  @ApiProperty({ example: uuidv4() })
+  @IsUUID()
   sender: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: uuidv4() })
+  @IsUUID()
   receiver: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 1 })
+  @IsPositive()
   amount: number;
 
   @ApiProperty()
