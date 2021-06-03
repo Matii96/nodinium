@@ -5,14 +5,6 @@ import { BlockchainModule } from './blockchain/blockchain.module';
 import { TransactionsModule } from './transactions/transactions.module';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: ['env/default.env'],
-    }),
-    HashingModule,
-    BlockchainModule,
-    TransactionsModule,
-  ],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), HashingModule, BlockchainModule, TransactionsModule],
 })
 export class AppModule {}

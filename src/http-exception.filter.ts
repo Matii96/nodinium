@@ -9,22 +9,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
    * @param {ArgumentsHost} host
    */
   catch(exception: HttpException, host: ArgumentsHost): void {
-    // Extract gql body query / mutation
     const ctx = host.switchToHttp();
-    const gqlQuery: string = ctx.getNext()?.req?.body?.query;
+    const response = ctx.getResponse<Response>();
 
-    // Format log
-    const data = { status: exception.getStatus(), message: (<{ message: string }>exception.getResponse()).message };
+    const data = exception.getResponse();
     const logger = new Logger('HttpException');
-    let msg = `${data.status} ${data.message}`;
+    logger.warn(data);
 
-    if (gqlQuery) {
-      msg += ` ${gqlQuery}`;
-    } else {
-      // Send response manually in case of simple http request
-      const response = ctx.getResponse<Response>();
-      response.status(data.status).send(data);
-    }
-    logger.warn(msg);
+    response.status(exception.getStatus()).send(data);
   }
 }
